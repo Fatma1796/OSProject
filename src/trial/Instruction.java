@@ -26,11 +26,19 @@ public class Instruction {
         return args.clone(); // Protects internal array
     }
 
+//    @Override
+//    public String toString() {
+//        return "Instruction{" +
+//                "command='" + command + '\'' +
+//                ", args=" + String.join(", ", args) +
+//                '}';
+//    }
+
     @Override
     public String toString() {
-        return "Instruction{" +
-                "command='" + command + '\'' +
-                ", args=" + String.join(", ", args) +
-                '}';
+        if (args.length > 0) {
+            return command + " " + String.join(" ", args);
+        }
+        return command;
     }
 }

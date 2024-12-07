@@ -7,6 +7,7 @@ public class MasterCore {
     private final Queue<Process> readyQueue;
     private final SlaveCore[] slaveCores;
     private final SharedMemory memory;
+    private final int quantum = 2;
 
     public MasterCore(SharedMemory memory, int numCores) {
         this.memory = memory;
@@ -27,16 +28,17 @@ public class MasterCore {
             for (SlaveCore core : slaveCores) {
                 if (core.isIdle() && !readyQueue.isEmpty()) {
                     synchronized (readyQueue) {
-                        Process process = readyQueue.poll();
-                        if (process != null) {
-                            System.out.println("Master assigned Process " + process.getProcessId() + " to Core " + core.getCoreId());
-                            core.assignProcess(process);
+                        Process process = readyQueue.peek();
+                        if (process != null && process.getQuantumRemaining() == 0) {
+                            process = readyQueue.poll();
+                            if (process.hasNextInstruction()) {
+                                core.assignProcess(process, quantum);
+                            }
                         }
                     }
                 }
             }
 
-            printReadyQueue();
             memory.printMemoryState();
 
             try {
@@ -71,13 +73,18 @@ public class MasterCore {
         return false;
     }
 
-    private void printReadyQueue() {
+    public void printReadyQueue() {
         synchronized (readyQueue) {
             System.out.print("Ready Queue: ");
-            for (Process process : readyQueue) {
-                System.out.print("P" + process.getProcessId() + " ");
-            }
             System.out.println();
+            for (Process process : readyQueue) {
+                String nextInstruction = process.hasNextInstruction() ? process.getInstructions() .peek().toString() : "None";
+                System.out.print("Process " + process.getProcessId() + " [Next: " + nextInstruction + "] ");
+                System.out.println();
+                //System.out.println(process.getInstructions() .peek().toString());
+
+            }
         }
     }
 }
+
