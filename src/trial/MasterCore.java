@@ -27,19 +27,15 @@ public class MasterCore {
         while (!readyQueue.isEmpty() || anyCoreBusy()) {
             for (SlaveCore core : slaveCores) {
                 if (core.isIdle() && !readyQueue.isEmpty()) {
-                    synchronized (readyQueue) {
-                        Process process = readyQueue.peek();
-                        if (process != null && process.getQuantumRemaining() == 0) {
-                            process = readyQueue.poll();
-                            if (process.hasNextInstruction()) {
-                                core.assignProcess(process, quantum);
-                            }
-                        }
+                    Process process = readyQueue.poll();
+                    if (process != null && process.hasNextInstruction()) {
+                        core.assignProcess(process, quantum);
                     }
                 }
             }
-
+            printReadyQueue();
             memory.printMemoryState();
+
 
             try {
                 Thread.sleep(1000); // Simulate clock cycle
@@ -73,17 +69,28 @@ public class MasterCore {
         return false;
     }
 
+//    public void printReadyQueue() {
+//        synchronized (readyQueue) {
+//            System.out.print("Ready Queue: ");
+//            System.out.println();
+//            for (Process process : readyQueue) {
+//                String nextInstruction = process.hasNextInstruction() ? process.getInstructions() .peek().toString() : "None";
+//                System.out.print("Process " + process.getProcessId() + " [Next: " + nextInstruction + "] ");
+//                System.out.println();
+//                //System.out.println(process.getInstructions() .peek().toString());
+//
+//            }
+//        }
+//    }
+
     public void printReadyQueue() {
         synchronized (readyQueue) {
             System.out.print("Ready Queue: ");
-            System.out.println();
             for (Process process : readyQueue) {
-                String nextInstruction = process.hasNextInstruction() ? process.getInstructions() .peek().toString() : "None";
+                String nextInstruction = process.hasNextInstruction() ? process.getNextInstruction().toString() : "None";
                 System.out.print("Process " + process.getProcessId() + " [Next: " + nextInstruction + "] ");
-                System.out.println();
-                //System.out.println(process.getInstructions() .peek().toString());
-
             }
+            System.out.println();
         }
     }
 }

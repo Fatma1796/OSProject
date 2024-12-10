@@ -54,10 +54,12 @@ public class SlaveCore extends Thread {
 
     private void executeCurrentProcess() {
         int executedInstructions = 0;
+        System.out.println("Core " + coreId + " executing Process " + currentProcess.getProcessId());
         while (currentProcess.hasNextInstruction() && executedInstructions < quantum) {
             Instruction instruction = currentProcess.getNextInstruction();
             executeInstruction(instruction);
             executedInstructions++;
+            memory.printMemoryState(); // Add this line
         }
         if (currentProcess.hasNextInstruction()) {
             System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
@@ -102,35 +104,34 @@ public class SlaveCore extends Thread {
             switch (command) {
                 case "assign":
                     char var = args[0].charAt(0);
-                    if (args.length == 3) { // This means there is an operation involved
-                        int operand1 = memory.get(args[1].charAt(0));
-                        int operand2 = memory.get(args[2].charAt(0));
-                        int result;
-
-                        switch (args[1]) {
-                            case "add":
-                                result = operand1 + operand2;
-                                break;
-                            case "subtract":
-                                result = operand1 - operand2;
-                                break;
-                            case "multiply":
-                                result = operand1 * operand2;
-                                break;
-                            case "divide":
-                                result = operand1 / operand2;
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Unsupported operation: " + args[1]);
-                        }
-
-                        memory.assign(var, result);
-                        System.out.println("Core " + coreId + " " + args[1] + " " + operand1 + " and " + operand2 + ", assigned " + var + " = " + result + " (Process " + currentProcess.getProcessId() + ")");
-                    } else { // No operation, just assignment
-                        int value = Integer.parseInt(args[1]);
-                        memory.assign(var, value);
-                        System.out.println("Core " + coreId + " assigned " + var + " = " + value + " (Process " + currentProcess.getProcessId() + ")");
+                    int value = Integer.parseInt(args[1]);
+                    memory.assign(var, value);
+                    System.out.println("Core " + coreId + " assigned " + var + " = " + value + " (Process " + currentProcess.getProcessId() + ")");
+                    break;
+                case "add":
+                case "subtract":
+                case "multiply":
+                case "divide":
+                    char result = args[0].charAt(0);
+                    int operand1 = memory.get(args[1].charAt(0));
+                    int operand2 = memory.get(args[2].charAt(0));
+                    int resultValue = 0;
+                    switch (command) {
+                        case "add":
+                            resultValue = operand1 + operand2;
+                            break;
+                        case "subtract":
+                            resultValue = operand1 - operand2;
+                            break;
+                        case "multiply":
+                            resultValue = operand1 * operand2;
+                            break;
+                        case "divide":
+                            resultValue = operand1 / operand2;
+                            break;
                     }
+                    memory.assign(result, resultValue);
+                    System.out.println("Core " + coreId + " performed " + command + " on " + args[1] + "(" + operand1 + ") and " + args[2] + "(" + operand2 + "), result " + result + " = " + resultValue + " (Process " + currentProcess.getProcessId() + ")");
                     break;
                 case "print":
                     System.out.println("Core " + coreId + " Output: " + args[0] + " = " + memory.get(args[0].charAt(0)));
@@ -142,7 +143,8 @@ public class SlaveCore extends Thread {
             System.err.println("Core " + coreId + " Error: " + e.getMessage());
         }
     }
-    }
+
+}
 
 
 

@@ -4,4 +4,3 @@ assign c input subtract a b
 print c
 assign c input add a b
 print c
-

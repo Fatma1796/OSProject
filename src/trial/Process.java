@@ -31,9 +31,8 @@ public class Process {
 
     public Instruction getNextInstruction() {
         if (quantumRemaining > 0) {
-            quantumRemaining--; // Decrement quantum on each instruction execution
+            quantumRemaining--;
         }
-        //programCounter++;
         return instructions.poll();
     }
 

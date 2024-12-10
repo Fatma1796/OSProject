@@ -8,4 +8,3 @@ assign y divide a b
 print y
 assign p subtract a b
 print p
-

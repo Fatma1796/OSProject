@@ -15,6 +15,8 @@ public class Main {
         // Number of cores in the system
         int coreCount = 2; // Adjust as needed for the number of slave cores
         MasterCore masterCore = new MasterCore(sharedMemory, coreCount);
+        final int quantum = 2;
+
 
         // Create processes from text files
         Process process1 = createProcessFromFile(
@@ -125,6 +127,34 @@ public class Main {
         }
         return new Process(processId, instructions, memoryStart, memoryEnd);
     }
+
+
+//    private static Process createProcessFromFile(String filePath, int processId, int memoryStart, int memoryEnd) {
+//        Queue<Instruction> instructions = new ArrayDeque<>();
+//        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+//            String line;
+//            Scanner inputScanner = new Scanner(System.in);
+//
+//            while ((line = reader.readLine()) != null) {
+//                String[] parts = line.trim().split("\\s+", 2);
+//                String command = parts[0];
+//                String[] args;
+//
+//                if (command.equals("assign") && parts[1].contains("input")) {
+//                    args = parts[1].split("\\s+");
+//                    System.out.print("Enter value for " + args[0] + ": ");
+//                    String value = inputScanner.nextLine();
+//                    instructions.add(new Instruction(command, new String[]{args[0], value}));
+//                } else {
+//                    args = parts.length > 1 ? parts[1].split("\\s+") : new String[0];
+//                    instructions.add(new Instruction(command, args));
+//                }
+//            }
+//        } catch (IOException e) {
+//            System.err.println("Error reading file: " + filePath);
+//        }
+//        return new Process(processId, instructions, memoryStart, memoryEnd);
+//    }
 
 
 

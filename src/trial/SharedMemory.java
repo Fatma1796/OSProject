@@ -33,11 +33,16 @@ public class SharedMemory {
      */
     public synchronized void printMemoryState() {
         System.out.print("Memory State: ");
+        boolean hasNonZeroValue = false;
         for (char var = 'a'; var <= 'z'; ++var) {
             int value = memory[getIndex(var)];
-            if (value != 0) { // Print only non-zero variables for clarity
+            if (value != 0) {
                 System.out.print(var + "=" + value + " ");
+                hasNonZeroValue = true;
             }
+        }
+        if (!hasNonZeroValue) {
+            System.out.print("No variables assigned.");
         }
         System.out.println();
     }
