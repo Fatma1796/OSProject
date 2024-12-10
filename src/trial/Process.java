@@ -12,6 +12,8 @@ public class Process {
     private final int memoryEnd;
    // private int programCounter = 0;
     private int quantumRemaining; // Time slice remaining for this process
+    private boolean isComplete = false;  // Flag to indicate if the process has completed
+
 
     public Process(int processId, Queue<Instruction> instructions, int memoryStart, int memoryEnd) {
         this.processId = processId;
@@ -19,10 +21,33 @@ public class Process {
         this.memoryStart = memoryStart;
         this.memoryEnd = memoryEnd;
         this.quantumRemaining = 0; // Initially set to 0, will be set when process is assigned to a core
+
+
+    }
+
+
+
+    public boolean isComplete() {
+        return isComplete;
     }
 
     public int getProcessId() {
         return processId;
+    }
+
+//    public boolean hasNextInstruction() {
+//        return !instructions.isEmpty();
+//    }
+//
+//    public Instruction getNextInstruction() {
+//        if (quantumRemaining > 0) {
+//            quantumRemaining--;
+//        }
+//        return instructions.poll();
+//    }
+
+    public void markComplete() {
+        this.isComplete = true; // Add this boolean field to the class
     }
 
     public boolean hasNextInstruction() {
@@ -30,15 +55,11 @@ public class Process {
     }
 
     public Instruction getNextInstruction() {
-        if (quantumRemaining > 0) {
-            quantumRemaining--;
+        if (!hasNextInstruction()) {
+            return null; // Ensure no invalid instruction is returned
         }
         return instructions.poll();
     }
-
-//    public int getProgramCounter() {
-//        return programCounter;
-//    }
 
     public int getMemoryStart() {
         return memoryStart;

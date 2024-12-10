@@ -1,4 +1,5 @@
 package trial;
+import java.util.Scanner;
 
 public class SlaveCore extends Thread {
     private final int coreId;
@@ -30,7 +31,6 @@ public class SlaveCore extends Thread {
         return isIdle;
     }
 
-    @Override
     public void run() {
         while (!terminate) {
             synchronized (this) {
@@ -46,32 +46,269 @@ public class SlaveCore extends Thread {
 
             if (!terminate && currentProcess != null) {
                 executeCurrentProcess();
-                isIdle = true;
             }
         }
         System.out.println("Core " + coreId + " terminated.");
     }
 
     private void executeCurrentProcess() {
-        int executedInstructions = 0;
-        System.out.println("Core " + coreId + " executing Process " + currentProcess.getProcessId());
-        while (currentProcess.hasNextInstruction() && executedInstructions < quantum) {
+        if (currentProcess.hasNextInstruction() && quantum > 0) {
             Instruction instruction = currentProcess.getNextInstruction();
             executeInstruction(instruction);
-            executedInstructions++;
-            memory.printMemoryState(); // Add this line
+            quantum--;
+            memory.printMemoryState(); // Print memory state after executing each instruction
         }
-        if (currentProcess.hasNextInstruction()) {
-            System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
-        } else {
-            System.out.println("Core " + coreId + " completed Process " + currentProcess.getProcessId());
-            currentProcess = null; // Clear the process only if it's finished
+        if (!currentProcess.hasNextInstruction() || quantum == 0) {
+            if (!currentProcess.hasNextInstruction()) {
+                System.out.println("Core " + coreId + " completed Process " + currentProcess.getProcessId());
+                currentProcess = null;
+                isIdle = true;
+            } else {
+                System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
+                isIdle = true;
+            }
         }
     }
+
+//    private void executeCurrentProcess() {
+//        if (currentProcess.hasNextInstruction() && quantum > 0) {
+//            Instruction instruction = currentProcess.getNextInstruction();
+//            executeInstruction(instruction);
+//            quantum--;
+//            memory.printMemoryState();
+//        }
+//        if (!currentProcess.hasNextInstruction() || quantum == 0) {
+//            if (!currentProcess.hasNextInstruction()) {
+//                System.out.println("Core " + coreId + " completed Process " + currentProcess.getProcessId());
+//                currentProcess = null;
+//                isIdle = true;
+//            } else {
+//                System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
+//                isIdle = true;
+//            }
+//        }
+//    }
+
+//    @Override
+//    public void run() {
+//        while (!terminate) {
+//            synchronized (this) {
+//                while (isIdle && !terminate) {
+//                    try {
+//                        wait();
+//                    } catch (InterruptedException e) {
+//                        System.err.println("Core " + coreId + " interrupted.");
+//                        return;
+//                    }
+//                }
+//            }
+//
+//            if (!terminate && currentProcess != null) {
+//                executeCurrentProcess();
+//                isIdle = true;
+//            }
+//        }
+//        System.out.println("Core " + coreId + " terminated.");
+//    }
+
+
+//    private void executeCurrentProcess() {
+//        int executedInstructions = 0;
+//        System.out.println("Core " + coreId + " executing Process " + currentProcess.getProcessId());
+//        while (currentProcess.hasNextInstruction() && executedInstructions < quantum) {
+//            Instruction instruction = currentProcess.getNextInstruction();
+//            executeInstruction(instruction);
+//            executedInstructions++;
+//            memory.printMemoryState(); // Add this line
+//        }
+//        if (currentProcess.hasNextInstruction()) {
+//            System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
+//        } else {
+//            System.out.println("Core " + coreId + " completed Process " + currentProcess.getProcessId());
+//            currentProcess = null; // Clear the process only if it's finished
+//        }
+//    }
+
+
+
+
+//    private void executeCurrentProcess() {
+//        while (currentProcess.hasNextInstruction()) {
+//            Instruction instruction = currentProcess.getNextInstruction();
+//            executeInstruction(instruction);
+//        }
+//        // Mark process as complete somehow or remove from the active list
+//        currentProcess.markComplete(); // You might need to add this method
+//        isIdle = true;
+//    }
+
 
     public int getCoreId() {
         return coreId;
     }
+
+
+
+    public synchronized Process getCurrentProcess() {
+        return currentProcess;
+    }
+
+    public synchronized void makeIdle() {
+        this.currentProcess = null;
+        this.isIdle = true;
+    }
+
+    private synchronized void handleInput(String variable) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Enter value for " + variable + ": ");
+        int value = scanner.nextInt(); // Read integer input
+        memory.assign(variable.charAt(0), value);
+        scanner.nextLine(); // Consume the newline left-over
+    }
+
+
+    private void executeInstruction(Instruction instruction) {
+        String command = instruction.getCommand();
+        String[] args = instruction.getArgs();
+
+        switch (command) {
+            case "assign":
+                if (args.length > 2 && (args[1].equals("add") || args[1].equals("subtract") || args[1].equals("multiply") || args[1].equals("divide"))) {
+                    performArithmetic(args[1], new String[]{args[0], args[2], args[3]});
+                } else {
+                    memory.assign(args[0].charAt(0), Integer.parseInt(args[1]));
+                }
+                break;
+            case "add":
+            case "subtract":
+            case "multiply":
+            case "divide":
+                performArithmetic(command, args);
+                break;
+            case "print":
+                System.out.println(args[0] + " = " + memory.get(args[0].charAt(0)));
+                break;
+        }
+    }
+
+    private void performArithmetic(String operation, String[] args) {
+        int operand1 = memory.get(args[1].charAt(0));
+        int operand2 = memory.get(args[2].charAt(0));
+        int result = switch (operation) {
+            case "add" -> operand1 + operand2;
+            case "subtract" -> operand1 - operand2;
+            case "multiply" -> operand1 * operand2;
+            case "divide" -> operand2 != 0 ? operand1 / operand2 : 0; // Handle division by zero
+            default -> 0;
+        };
+        if (operation.equals("divide") && operand2 == 0) {
+            System.out.println("Error: Division by zero");
+        }
+        memory.assign(args[0].charAt(0), result);
+    }
+
+//    private void executeInstruction(Instruction instruction) {
+//        String command = instruction.getCommand();
+//        String[] args = instruction.getArgs();
+//
+//        switch (command) {
+//            case "assign":
+//                if (args.length > 2 && (args[1].equals("add") || args[1].equals("subtract") || args[1].equals("multiply") || args[1].equals("divide"))) {
+//                    performArithmetic(args[1], new String[]{args[0], args[2], args[3]});
+//                } else {
+//                    memory.assign(args[0].charAt(0), Integer.parseInt(args[1]));
+//                }
+//                break;
+//            case "add":
+//            case "subtract":
+//            case "multiply":
+//            case "divide":
+//                performArithmetic(command, args);
+//                break;
+//            case "print":
+//                System.out.println(args[0] + " = " + memory.get(args[0].charAt(0)));
+//                break;
+//        }
+//    }
+//
+//    private void performArithmetic(String operation, String[] args) {
+//        int operand1 = memory.get(args[1].charAt(0));
+//        int operand2 = memory.get(args[2].charAt(0));
+//        int result = 0;
+//        switch (operation) {
+//            case "add":
+//                result = operand1 + operand2;
+//                break;
+//            case "subtract":
+//                result = operand1 - operand2;
+//                break;
+//            case "multiply":
+//                result = operand1 * operand2;
+//                break;
+//            case "divide":
+//                result = operand2 != 0 ? operand1 / operand2 : 0; // Handle division by zero
+//                if (operand2 == 0) System.out.println("Error: Division by zero");
+//                break;
+//        }
+//        memory.assign(args[0].charAt(0), result);
+//    }
+
+
+//    private void executeInstruction(Instruction instruction) {
+//        String command = instruction.getCommand();
+//        String[] args = instruction.getArgs();
+//
+//        switch (command) {
+//            case "assign":
+//                if (args[1].equals("input")) {
+//                        System.out.print("Enter value for " + args[0] + ": ");
+//                        Scanner scanner = new Scanner(System.in);
+//                        int value = scanner.nextInt();
+//                        memory.assign(args[0].charAt(0), value);
+//                } else {
+//                    memory.assign(args[0].charAt(0), Integer.parseInt(args[1]));
+//                }
+//                break;
+//            case "add":
+//            case "subtract":
+//            case "multiply":
+//            case "divide":
+//                performArithmetic(command, args);
+//                break;
+//            case "print":
+//                System.out.println(args[0] + " = " + memory.get(args[0].charAt(0)));
+//                break;
+//        }
+//    }
+//
+//    private void performArithmetic(String command, String[] args) {
+//        int operand1 = memory.get(args[1].charAt(0));
+//        int operand2 = memory.get(args[2].charAt(0));
+//        int result = 0;
+//
+//        switch (command) {
+//            case "add":
+//                result = operand1 + operand2;
+//                break;
+//            case "subtract":
+//                result = operand1 - operand2;
+//                break;
+//            case "multiply":
+//                result = operand1 * operand2;
+//                break;
+//            case "divide":
+//                if (operand2 == 0) {
+//                    System.out.println("Error: Division by zero");
+//                    return;
+//                }
+//                result = operand1 / operand2;
+//                break;
+//        }
+//        memory.assign(args[0].charAt(0), result);
+//        System.out.println("Result of " + command + " (" + args[1] + ", " + args[2] + ") = " + result);
+//    }
+//
+
 
 //    private void executeInstruction(Instruction instruction) {
 //        String command = instruction.getCommand();
@@ -80,69 +317,53 @@ public class SlaveCore extends Thread {
 //        try {
 //            switch (command) {
 //                case "assign":
-//                    char var = args[0].charAt(0);
-//                    int value = Integer.parseInt(args[1]);
-//                    memory.assign(var, value);
-//                    System.out.println("Core " + coreId + " assigned " + var + " = " + value + " (Process " + currentProcess.getProcessId() + ")");
+//                    if (args[1].equals("input")) {
+//                        System.out.print("Enter value for " + args[0] + ": ");
+//                        Scanner scanner = new Scanner(System.in);
+//                        int value = scanner.nextInt();
+//                        memory.assign(args[0].charAt(0), value);
+//                    } else {
+//                        // Normal assignment
+//                        char var = args[0].charAt(0);
+//                        int value = Integer.parseInt(args[1]);
+//                        memory.assign(var, value);
+//                        System.out.println("Assigned " + var + " = " + value);
+//                    }
+//                    break;
+//                case "add":
+//                    int addResult = memory.get(args[1].charAt(0)) + memory.get(args[2].charAt(0));
+//                    memory.assign(args[0].charAt(0), addResult);
+//                    System.out.println("Result of addition: " + args[0] + " = " + addResult);
+//                    break;
+//                case "subtract":
+//                    int subtractResult = memory.get(args[1].charAt(0)) - memory.get(args[2].charAt(0));
+//                    memory.assign(args[0].charAt(0), subtractResult);
+//                    System.out.println("Result of subtraction: " + args[0] + " = " + subtractResult);
+//                    break;
+//                case "multiply":
+//                    int multiplyResult = memory.get(args[1].charAt(0)) * memory.get(args[2].charAt(0));
+//                    memory.assign(args[0].charAt(0), multiplyResult);
+//                    System.out.println("Result of multiplication: " + args[0] + " = " + multiplyResult);
+//                    break;
+//                case "divide":
+//                    if (memory.get(args[2].charAt(0)) == 0) {
+//                        System.err.println("Division by zero error.");
+//                    } else {
+//                        int divideResult = memory.get(args[1].charAt(0)) / memory.get(args[2].charAt(0));
+//                        memory.assign(args[0].charAt(0), divideResult);
+//                        System.out.println("Result of division: " + args[0] + " = " + divideResult);
+//                    }
 //                    break;
 //                case "print":
-//                    System.out.println("Core " + coreId + " Output: " + args[0] + " = " + memory.get(args[0].charAt(0)));
+//                    System.out.println("Output: " + args[0] + " = " + memory.get(args[0].charAt(0)));
 //                    break;
 //                default:
-//                    throw new IllegalArgumentException("Unknown command: " + command);
+//                    throw new IllegalArgumentException("Unsupported command: " + command);
 //            }
 //        } catch (Exception e) {
-//            System.err.println("Core " + coreId + " Error: " + e.getMessage());
+//            System.err.println("Error executing instruction: " + e.getMessage());
 //        }
 //    }
-
-    private void executeInstruction(Instruction instruction) {
-        String command = instruction.getCommand();
-        String[] args = instruction.getArgs();
-
-        try {
-            switch (command) {
-                case "assign":
-                    char var = args[0].charAt(0);
-                    int value = Integer.parseInt(args[1]);
-                    memory.assign(var, value);
-                    System.out.println("Core " + coreId + " assigned " + var + " = " + value + " (Process " + currentProcess.getProcessId() + ")");
-                    break;
-                case "add":
-                case "subtract":
-                case "multiply":
-                case "divide":
-                    char result = args[0].charAt(0);
-                    int operand1 = memory.get(args[1].charAt(0));
-                    int operand2 = memory.get(args[2].charAt(0));
-                    int resultValue = 0;
-                    switch (command) {
-                        case "add":
-                            resultValue = operand1 + operand2;
-                            break;
-                        case "subtract":
-                            resultValue = operand1 - operand2;
-                            break;
-                        case "multiply":
-                            resultValue = operand1 * operand2;
-                            break;
-                        case "divide":
-                            resultValue = operand1 / operand2;
-                            break;
-                    }
-                    memory.assign(result, resultValue);
-                    System.out.println("Core " + coreId + " performed " + command + " on " + args[1] + "(" + operand1 + ") and " + args[2] + "(" + operand2 + "), result " + result + " = " + resultValue + " (Process " + currentProcess.getProcessId() + ")");
-                    break;
-                case "print":
-                    System.out.println("Core " + coreId + " Output: " + args[0] + " = " + memory.get(args[0].charAt(0)));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown command: " + command);
-            }
-        } catch (Exception e) {
-            System.err.println("Core " + coreId + " Error: " + e.getMessage());
-        }
-    }
 
 }
 
