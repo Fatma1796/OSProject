@@ -14,6 +14,7 @@ public class SlaveCore extends Thread {
         this.memory = memory;
     }
 
+
     public synchronized void terminate() {
         terminate = true;
         notify();
