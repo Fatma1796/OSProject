@@ -1,3 +1,54 @@
+//package trial;
+//
+//import java.util.Queue;
+//import java.util.LinkedList;
+//
+//public class Process {
+//    private final int processId;
+//    private final Queue<Instruction> instructions;
+//    private boolean isComplete = false;
+//    private final SharedMemory memory; // Isolated memory for each process
+//
+//    public Process(int processId) {
+//        this.processId = processId;
+//        this.instructions = new LinkedList<>();
+//        this.memory = new SharedMemory(); // Each process gets its own memory
+//    }
+//
+//    public int getProcessId() {
+//        return processId;
+//    }
+//
+//    public Queue<Instruction> getInstructions() {
+//        return instructions;
+//    }
+//
+//    public SharedMemory getMemory() {
+//        return memory;
+//    }
+//
+//    public boolean hasNextInstruction() {
+//        return !instructions.isEmpty();
+//    }
+//
+//    public Instruction getNextInstruction() {
+//        return instructions.poll();
+//    }
+//
+//    public void addInstruction(Instruction instruction) {
+//        instructions.add(instruction);
+//    }
+//
+//    public void markComplete() {
+//        isComplete = true;
+//    }
+//
+//    public boolean isComplete() {
+//        return isComplete;
+//    }
+//}
+
+
 package trial;
 
 import java.util.Queue;
