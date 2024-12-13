@@ -102,17 +102,17 @@ public class SlaveCore extends Thread {
 
         switch (command) {
             case "assign":
-                if (args[1].equals("input")) {
+                if (args.length > 1 && args[1].equals("input")) { // Check for args length
                     handleInput(args[0]);
-                } else {
-                    performArithmetic(args[1], args);
+                } else if (args.length > 2) { // Check for arithmetic operations
+                    performArithmetic(args[0], args[1], args); // Corrected call
                 }
                 break;
             case "add":
             case "subtract":
             case "multiply":
             case "divide":
-                performArithmetic(command, args);
+                performArithmetic(args[0], command, args); // Corrected call for direct arithmetic
                 break;
             case "print":
                 System.out.println(currentProcess.getProcessId() + args[0] + " = " + getOperandValue(args[0].charAt(0)));
@@ -120,17 +120,10 @@ public class SlaveCore extends Thread {
         }
     }
 
-    private void handleInput(String variable) {
-        System.out.print("Enter value for " + variable + ": ");
-        int value = new java.util.Scanner(System.in).nextInt();
-        masterCore.updateValueMap(variable.charAt(0), value, currentProcess);
-    }
+    private void performArithmetic(String targetVariable, String operation, String[] args) { // Added targetVariable
+        int operand1 = getOperandValue(args[2].charAt(0)); // Correct index
+        int operand2 = getOperandValue(args[3].charAt(0)); // Correct index
 
-    private void performArithmetic(String operation, String[] args) {
-        int operand1 = getOperandValue(args[1].charAt(0));
-        int operand2 = getOperandValue(args[3].charAt(0));
-
-        // Print the values being used in the operation
         System.out.println("Performing " + operation + " with values: " + operand1 + " and " + operand2);
 
         int result = switch (operation) {
@@ -144,14 +137,33 @@ public class SlaveCore extends Thread {
         if (operation.equals("divide") && operand2 == 0) {
             System.out.println("Error: Division by zero");
         }
-        masterCore.updateValueMap(args[0].charAt(0), result, currentProcess);
-        // Example usage to save the value for 'c'
-        // masterCore.updateValueMap('z', result, currentProcess);
-        //masterCore.updateValueMap('c', result, currentProcess);
-        //masterCore.updateValueMap(args[0].charAt(0), result, currentProcess);
+
+        masterCore.updateValueMap(targetVariable.charAt(0), result, currentProcess); // Use targetVariable
     }
 
+    private void handleInput(String variable) {
+        System.out.print("Enter value for " + variable + ": ");
+        int value = new java.util.Scanner(System.in).nextInt();
+        masterCore.updateValueMap(variable.charAt(0), value, currentProcess);
+    }
+    private int getOperandValue(char variable) {
+        Integer value;
+        if (variable == 'a') {
+            value = masterCore.getAValueByProcessId(currentProcess.getProcessId());
+        } else if (variable == 'b') {
+            value = masterCore.getBValueByProcessId(currentProcess.getProcessId());
+        } else {
+            value = masterCore.getValue(variable);
+        }
 
+        if (value == null) {
+            System.out.println("Error: Value for variable " + variable + " is not set for process ID " + currentProcess.getProcessId());
+            throw new IllegalStateException("Value for variable " + variable + " is not set for process ID " + currentProcess.getProcessId());
+        }
+        return value;
+    }
+
+/*
     private int getOperandValue(char variable) {
         Integer value;
         if (variable == 'a') {
@@ -172,6 +184,6 @@ public class SlaveCore extends Thread {
         }
         return value;
     }
-
+*/
 }
 

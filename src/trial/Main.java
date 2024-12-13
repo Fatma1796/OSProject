@@ -41,6 +41,31 @@ public class Main {
 
     private static Process createProcessFromFile(String filePath, int processId, MasterCore masterCore) {
         Queue<Instruction> instructions = new ArrayDeque<>();
+        Process process = new Process(processId, instructions); // Create the process *first*
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            Scanner scanner = new Scanner(System.in);
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.trim().split("\\s+", 2);
+                String command = parts[0];
+                String[] args = parts.length > 1 ? parts[1].split("\\s+") : new String[0];
+
+                if (command.equals("assign") && args.length > 1 && args[1].equals("input")) {
+                    System.out.print("Enter value for " + args[0] + ": ");
+                    int value = scanner.nextInt();
+                    masterCore.updateValueMap(args[0].charAt(0), value, process); // Associate with the correct process!
+                } else {
+                    instructions.add(new Instruction(command, args));
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Error reading file: " + filePath);
+        }
+        return process; // Return the correctly populated process
+    }
+/*
+    private static Process createProcessFromFile(String filePath, int processId, MasterCore masterCore) {
+        Queue<Instruction> instructions = new ArrayDeque<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
             Scanner scanner = new Scanner(System.in);
@@ -62,7 +87,7 @@ public class Main {
         }
         return new Process(processId, instructions);
     }
-
+*/
 //    private static Process createProcessFromFile(String filePath, int processId, MasterCore masterCore) {
 //        Queue<Instruction> instructions = new ArrayDeque<>();
 //        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
