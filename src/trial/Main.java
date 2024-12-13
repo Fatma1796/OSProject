@@ -16,13 +16,13 @@ public class Main {
 
         // Create processes from text files
         Process process1 = createProcessFromFile(
-                "C:\\Users\\fosam\\OneDrive\\Desktop\\Uni\\Semester 3\\Operating Systems\\program_1.txt",
+                "C:\\Users\\ganna\\OneDrive\\operating system\\OSProject\\src\\trial\\program_1.txt",
                 1, masterCore);
         Process process2 = createProcessFromFile(
-                "C:\\Users\\fosam\\OneDrive\\Desktop\\Uni\\Semester 3\\Operating Systems\\Program_2.txt",
+                "C:\\Users\\ganna\\OneDrive\\operating system\\OSProject\\src\\trial\\Program_2.txt",
                 2, masterCore);
         Process process3 = createProcessFromFile(
-                "C:\\Users\\fosam\\OneDrive\\Desktop\\Uni\\Semester 3\\Operating Systems\\Program_3.txt",
+                "C:\\Users\\ganna\\OneDrive\\operating system\\OSProject\\src\\trial\\Program_3.txt",
                 3, masterCore);
 
         // Add processes to the MasterCore's ready queue
