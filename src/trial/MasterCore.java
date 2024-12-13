@@ -1,4 +1,3 @@
-// MasterCore.java
 package trial;
 
 import java.util.HashMap;
@@ -6,22 +5,15 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class MasterCore {
-    private final SharedMemory sharedMemory;
-    private final int coreCount;
-    private final Queue<Process> readyQueue;
-    private final HashMap<Integer, Process> aValuesMap;
-    private final HashMap<Integer, Process> bValuesMap;
+    private final HashMap<Integer, Integer> aValuesMap = new HashMap<>();
+    private final HashMap<Integer, Integer> bValuesMap = new HashMap<>();
+    private final Queue<Process> readyQueue = new LinkedList<>();
     private final SlaveCore[] slaveCores;
 
-    public MasterCore(SharedMemory sharedMemory, int coreCount) {
-        this.sharedMemory = sharedMemory;
-        this.coreCount = coreCount;
-        this.readyQueue = new LinkedList<>();
-        this.aValuesMap = new HashMap<>();
-        this.bValuesMap = new HashMap<>();
-        this.slaveCores = new SlaveCore[coreCount];
+    public MasterCore(int coreCount) {
+        slaveCores = new SlaveCore[coreCount];
         for (int i = 0; i < coreCount; i++) {
-            slaveCores[i] = new SlaveCore(i, sharedMemory, this);
+            slaveCores[i] = new SlaveCore(i, this);
             slaveCores[i].start();
         }
     }
@@ -30,54 +22,56 @@ public class MasterCore {
         readyQueue.add(process);
     }
 
-    public void printReadyQueue() {
-        System.out.println("Ready Queue:");
-        for (Process process : readyQueue) {
-            System.out.println(process);
-        }
+    public Queue<Process> getReadyQueue() {
+        return readyQueue;
     }
 
     public void startScheduling() {
-        while (!readyQueue.isEmpty() || anyCoreBusy()) {
+        while (!readyQueue.isEmpty()) {
             for (SlaveCore core : slaveCores) {
                 if (core.isIdle() && !readyQueue.isEmpty()) {
-                    Process process = readyQueue.poll();
-                    core.assignProcess(process, 5); // Assign a quantum of 5 for example
+                    core.assignProcess(readyQueue.poll(), 2); // Example quantum value
                 }
             }
         }
-        for (SlaveCore core : slaveCores) {
-            core.terminate();
-        }
-    }
-
-    private boolean anyCoreBusy() {
-        for (SlaveCore core : slaveCores) {
-            if (!core.isIdle()) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void updateValueMap(char variable, int value, Process process) {
         if (variable == 'a') {
-            aValuesMap.put(value, process);
+            aValuesMap.put(process.getProcessId(), value);
         } else if (variable == 'b') {
-            bValuesMap.put(value, process);
+            bValuesMap.put(process.getProcessId(), value);
         }
+        printValueMaps();
     }
 
-    public Process getProcessByAValue(int value) {
-        return aValuesMap.get(value);
+    public Integer getAValueByProcessId(int processId) {
+        return aValuesMap.get(processId);
     }
 
-    public Process getProcessByBValue(int value) {
-        return bValuesMap.get(value);
+    public Integer getBValueByProcessId(int processId) {
+        return bValuesMap.get(processId);
     }
 
-    public Queue<Process> getReadyQueue() {
-        return readyQueue;
+    public Integer getValue(char variable) {
+        if (variable == 'a') {
+            return aValuesMap.values().stream().findFirst().orElse(null);
+        } else if (variable == 'b') {
+            return bValuesMap.values().stream().findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    private void printValueMaps() {
+        System.out.println("aValuesMap: " + aValuesMap);
+        System.out.println("bValuesMap: " + bValuesMap);
+    }
+
+        public void printReadyQueue() {
+        System.out.println("Ready Queue:");
+        for (Process process : readyQueue) {
+            System.out.println(process);
+        }
     }
 }
 
@@ -100,8 +94,8 @@ public class MasterCore {
 //    private final SharedMemory sharedMemory;
 //    private final int coreCount;
 //    private final Queue<Process> readyQueue;
-//    private final HashMap<Integer, Process> aValuesMap;
-//    private final HashMap<Integer, Process> bValuesMap;
+//    private final HashMap<Integer, Integer> aValuesMap;
+//    private final HashMap<Integer, Integer> bValuesMap;
 //    private final SlaveCore[] slaveCores;
 //
 //    public MasterCore(SharedMemory sharedMemory, int coreCount) {
@@ -142,20 +136,6 @@ public class MasterCore {
 //        }
 //    }
 //
-////    public void startScheduling() {
-////        while (!readyQueue.isEmpty() || anyCoreBusy()) {
-////            for (SlaveCore core : slaveCores) {
-////                if (core.isIdle() && !readyQueue.isEmpty()) {
-////                    Process process = readyQueue.poll();
-////                    core.assignProcess(process, 5); // Assign a quantum of 5 for example
-////                }
-////            }
-////        }
-////        for (SlaveCore core : slaveCores) {
-////            core.terminate();
-////        }
-////    }
-//
 //    private boolean anyCoreBusy() {
 //        for (SlaveCore core : slaveCores) {
 //            if (!core.isIdle()) {
@@ -165,20 +145,36 @@ public class MasterCore {
 //        return false;
 //    }
 //
+////    public void updateValueMap(char variable, int value, Process process) {
+////        if (variable == 'a') {
+////            aValuesMap.put(process.getProcessId(), value);
+////        } else if (variable == 'b') {
+////            bValuesMap.put(process.getProcessId(), value);
+////        }
+////    }
+//
+//    // MasterCore.java
+//    // MasterCore.java
 //    public void updateValueMap(char variable, int value, Process process) {
 //        if (variable == 'a') {
-//            aValuesMap.put(value, process);
+//            aValuesMap.put(process.getProcessId(), value);
 //        } else if (variable == 'b') {
-//            bValuesMap.put(value, process);
+//            bValuesMap.put(process.getProcessId(), value);
 //        }
+//        printValueMaps();
 //    }
 //
-//    public Process getProcessByAValue(int value) {
-//        return aValuesMap.get(value);
+//    private void printValueMaps() {
+//        System.out.println("aValuesMap: " + aValuesMap);
+//        System.out.println("bValuesMap: " + bValuesMap);
 //    }
 //
-//    public Process getProcessByBValue(int value) {
-//        return bValuesMap.get(value);
+//    public Integer getAValueByProcessId(int processId) {
+//        return aValuesMap.get(processId);
+//    }
+//
+//    public Integer getBValueByProcessId(int processId) {
+//        return bValuesMap.get(processId);
 //    }
 //
 //    public Queue<Process> getReadyQueue() {
@@ -193,34 +189,7 @@ public class MasterCore {
 //
 //
 //
-////// MasterCore.java
-////package trial;
-////
-////import java.util.HashMap;
-////import java.util.Queue;
-////import java.util.LinkedList;
-////
-////public class MasterCore {
-////    private final SharedMemory sharedMemory;
-////    private final int coreCount;
-////    private final Queue<Process> readyQueue;
-////    private final HashMap<Integer, Process> aValuesMap;
-////    private final HashMap<Integer, Process> bValuesMap;
-////    private final SlaveCore[] slaveCores;
-////
-////    public MasterCore(SharedMemory sharedMemory, int coreCount) {
-////        this.sharedMemory = sharedMemory;
-////        this.coreCount = coreCount;
-////        this.readyQueue = new LinkedList<>();
-////        this.aValuesMap = new HashMap<>();
-////        this.bValuesMap = new HashMap<>();
-////        this.slaveCores = new SlaveCore[coreCount];
-////        for (int i = 0; i < coreCount; i++) {
-////            slaveCores[i] = new SlaveCore(i, sharedMemory, this);
-////            slaveCores[i].start();
-////        }
-////    }
-////
+//
 ////    public void addProcess(Process process) {
 ////        readyQueue.add(process);
 ////    }
@@ -232,16 +201,12 @@ public class MasterCore {
 ////        }
 ////    }
 ////
-////    public Queue<Process> getReadyQueue() {
-////        return readyQueue;
-////    }
-////
 ////    public void startScheduling() {
 ////        while (!readyQueue.isEmpty() || anyCoreBusy()) {
 ////            for (SlaveCore core : slaveCores) {
 ////                if (core.isIdle() && !readyQueue.isEmpty()) {
 ////                    Process process = readyQueue.poll();
-////                    core.assignProcess(process, 2); // Assign a quantum of 2 for example
+////                    core.assignProcess(process, 5); // Assign a quantum of 5 for example
 ////                }
 ////            }
 ////        }
@@ -261,18 +226,26 @@ public class MasterCore {
 ////
 ////    public void updateValueMap(char variable, int value, Process process) {
 ////        if (variable == 'a') {
-////            aValuesMap.put(value, process);
+////            aValuesMap.put(process.getProcessId(), value);
 ////        } else if (variable == 'b') {
 ////            bValuesMap.put(value, process);
 ////        }
 ////    }
 ////
-////    public Process getProcessByAValue(int value) {
-////        return aValuesMap.get(value);
+////    public Integer getAValueByProcessId(int processId) {
+////        return aValuesMap.get(processId);
+////    }
+////
+////    public Integer getBValueByProcessId(int processId) {
+////        return bValuesMap.get(processId);
 ////    }
 ////
 ////    public Process getProcessByBValue(int value) {
 ////        return bValuesMap.get(value);
+////    }
+////
+////    public Queue<Process> getReadyQueue() {
+////        return readyQueue;
 ////    }
 ////}
 ////
@@ -281,19 +254,17 @@ public class MasterCore {
 ////
 ////
 ////
-//////// MasterCore.java
-//////package trial;
-//////
 //////import java.util.HashMap;
-//////import java.util.Queue;
 //////import java.util.LinkedList;
+//////import java.util.Queue;
 //////
 //////public class MasterCore {
 //////    private final SharedMemory sharedMemory;
 //////    private final int coreCount;
 //////    private final Queue<Process> readyQueue;
-//////    private final HashMap<Integer, Process> aValuesMap;
-//////    private final HashMap<Integer, Process> bValuesMap;
+//////    private final HashMap<Integer, Integer> aValuesMap;
+//////    private final HashMap<Integer, Integer> bValuesMap;
+//////    private final SlaveCore[] slaveCores;
 //////
 //////    public MasterCore(SharedMemory sharedMemory, int coreCount) {
 //////        this.sharedMemory = sharedMemory;
@@ -301,6 +272,11 @@ public class MasterCore {
 //////        this.readyQueue = new LinkedList<>();
 //////        this.aValuesMap = new HashMap<>();
 //////        this.bValuesMap = new HashMap<>();
+//////        this.slaveCores = new SlaveCore[coreCount];
+//////        for (int i = 0; i < coreCount; i++) {
+//////            slaveCores[i] = new SlaveCore(i, sharedMemory, this);
+//////            slaveCores[i].start();
+//////        }
 //////    }
 //////
 //////    public void addProcess(Process process) {
@@ -315,7 +291,26 @@ public class MasterCore {
 //////    }
 //////
 //////    public void startScheduling() {
-//////        // Implement scheduling logic here
+//////        while (!readyQueue.isEmpty() || anyCoreBusy()) {
+//////            for (SlaveCore core : slaveCores) {
+//////                if (core.isIdle() && !readyQueue.isEmpty()) {
+//////                    Process process = readyQueue.poll();
+//////                    core.assignProcess(process, 5); // Assign a quantum of 5 for example
+//////                }
+//////            }
+//////        }
+//////        for (SlaveCore core : slaveCores) {
+//////            core.terminate();
+//////        }
+//////    }
+//////
+//////    private boolean anyCoreBusy() {
+//////        for (SlaveCore core : slaveCores) {
+//////            if (!core.isIdle()) {
+//////                return true;
+//////            }
+//////        }
+//////        return false;
 //////    }
 //////
 //////    public void updateValueMap(char variable, int value, Process process) {
@@ -333,6 +328,10 @@ public class MasterCore {
 //////    public Process getProcessByBValue(int value) {
 //////        return bValuesMap.get(value);
 //////    }
+//////
+//////    public Queue<Process> getReadyQueue() {
+//////        return readyQueue;
+//////    }
 //////}
 //////
 //////
@@ -340,90 +339,6 @@ public class MasterCore {
 //////
 //////
 //////
-////////
-////////package trial;
-////////
-////////import java.util.Queue;
-////////import java.util.LinkedList;
-////////
-////////public class MasterCore {
-////////    private final Queue<Process> readyQueue;
-////////    private final SlaveCore[] slaveCores;
-////////    private final SharedMemory memory;
-////////    private final int quantum = 2;
-////////
-////////    public MasterCore(SharedMemory memory, int numCores) {
-////////        this.memory = memory;
-////////        this.readyQueue = new LinkedList<>();
-////////        this.slaveCores = new SlaveCore[numCores];
-////////        for (int i = 0; i < numCores; i++) {
-////////            slaveCores[i] = new SlaveCore(i + 1, this.memory);
-////////            slaveCores[i].start();
-////////        }
-////////    }
-////////
-////////    public void terminateAllCores() {
-////////        for (SlaveCore core : slaveCores) {
-////////            core.terminate();
-////////        }
-////////        for (SlaveCore core : slaveCores) {
-////////            try {
-////////                core.join();
-////////            } catch (InterruptedException e) {
-////////                System.err.println("Interrupted while waiting for core to finish: " + core.getCoreId());
-////////            }
-////////        }
-////////    }
-////////
-////////    public void addProcess(Process process) {
-////////        readyQueue.add(process);
-////////    }
-////////
-////////    public void startScheduling() {
-////////        while (!readyQueue.isEmpty() || anyCoreBusy()) {
-////////            assignProcessesToCores();
-////////            sleepAndManageCycles();
-////////            printReadyQueue();
-////////        }
-////////        terminateAllCores();
-////////        System.out.println("All processes completed and system shutting down.");
-////////    }
-////////
-////////    private void assignProcessesToCores() {
-////////        for (SlaveCore core : slaveCores) {
-////////            if (core.isIdle() && !readyQueue.isEmpty()) {
-////////                Process process = readyQueue.poll();
-////////                if (process != null) {
-////////                    core.assignProcess(process, quantum);
-////////                }
-////////            }
-////////        }
-////////    }
-////////
-////////    private boolean anyCoreBusy() {
-////////        for (SlaveCore core : slaveCores) {
-////////            if (!core.isIdle()) {
-////////                return true;
-////////            }
-////////        }
-////////        return false;
-////////    }
-////////
-////////    private void sleepAndManageCycles() {
-////////        try {
-////////            Thread.sleep(1000); // Simulate clock cycle
-////////        } catch (InterruptedException e) {
-////////            Thread.currentThread().interrupt();
-////////            System.err.println("MasterCore scheduling was interrupted.");
-////////        }
-////////    }
-////////
-////////    public void printReadyQueue() {
-////////        System.out.print("Ready Queue: ");
-////////        for (Process process : readyQueue) {
-////////            String nextInstruction = process.hasNextInstruction() ? process.getInstructions().peek().toString() : "None";
-////////            System.out.print("Process " + process.getProcessId() + " [Next: " + nextInstruction + "] ");
-////////        }
-////////        System.out.println();
-////////    }
-////////}
+//////
+//////
+//////
