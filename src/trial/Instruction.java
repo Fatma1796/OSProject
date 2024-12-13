@@ -28,13 +28,7 @@ public class Instruction {
 
 
 
-//    @Override
-//    public String toString() {
-//        if (args.length > 0) {
-//            return command + " " + String.join(" ", args);
-//        }
-//        return command;
-//    }
+
 
     @Override
     public String toString() {
