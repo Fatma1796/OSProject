@@ -8,16 +8,19 @@ public class SlaveCore extends Thread {
     private final MasterCore masterCore;
     private Process currentProcess;
     private volatile boolean isIdle = true;
-    private volatile boolean terminate = false;
+    //private volatile boolean terminate = false;
     private int quantum;
+    private volatile boolean terminate = false; // Declare terminate as volatile
+
 
     public SlaveCore(int coreId, MasterCore masterCore) {
         this.coreId = coreId;
         this.masterCore = masterCore;
     }
 
-    public synchronized void terminate() {
-        terminate = true;
+
+    public synchronized void terminate() { // Make terminate method synchronized
+        this.terminate = true;
         notify();
     }
 
@@ -44,6 +47,7 @@ public class SlaveCore extends Thread {
     @Override
     public void run() {
         while (!terminate) {
+            Process processToExecute;
             synchronized (this) {
                 while (isIdle && !terminate) {
                     try {
@@ -53,40 +57,82 @@ public class SlaveCore extends Thread {
                         return;
                     }
                 }
+                if(terminate) break; // Check terminate after wait
+                processToExecute = currentProcess; // Store currentProcess locally
             }
+         //       processToExecute = currentProcess; // Store currentProcess locally
 
-            if (!terminate && currentProcess != null) {
-                executeCurrentProcess();
+
+            if (processToExecute != null) {
+                executeCurrentProcess(processToExecute); // Pass the local variable
             }
         }
         System.out.println("Core " + coreId + " terminated.");
     }
 
-    private void executeCurrentProcess() {
-        System.out.println("Core " + coreId + " executing Process " + currentProcess.getProcessId());
+
+    private void executeCurrentProcess(Process process) {
+        System.out.println("Core " + coreId + " executing Process " + process.getProcessId());
 
         int executedInstructions = 0;
-
-        // Execute instructions as per quantum
-        while (executedInstructions < quantum && currentProcess.hasNextInstruction()) {
-            Instruction instruction = currentProcess.getNextInstruction();
+        while (executedInstructions < quantum && process.hasNextInstruction()) {
+            Instruction instruction = process.getNextInstruction();
             executeInstruction(instruction);
             executedInstructions++;
         }
 
-        // Check if process is completed
-        if (!currentProcess.hasNextInstruction()) {
-            System.out.println("Core " + coreId + " completed Process " + currentProcess.getProcessId());
-            currentProcess.markComplete();
+        if (!process.hasNextInstruction()) {
+            System.out.println("Core " + coreId + " completed Process " + process.getProcessId());
+            process.markComplete();
         } else {
-            System.out.println("Core " + coreId + " quantum expired for Process " + currentProcess.getProcessId());
-            printReadyQueue();
+            System.out.println("Core " + coreId + " quantum expired for Process " + process.getProcessId());
+            masterCore.addProcess(process);
+            masterCore.printReadyQueue(); // Print here
         }
 
-        // Return the process to the ready queue if not completed
         makeIdle();
     }
-
+//    private void executeCurrentProcess(Process process) {
+//        System.out.println("Core " + coreId + " executing Process " + process.getProcessId());
+//
+//        int executedInstructions = 0;
+//        while (executedInstructions < quantum && process.hasNextInstruction()) {
+//            Instruction instruction = process.getNextInstruction();
+//            executeInstruction(instruction);
+//            executedInstructions++;
+//        }
+//
+//        if (!process.hasNextInstruction()) {
+//            System.out.println("Core " + coreId + " completed Process " + process.getProcessId());
+//            process.markComplete();
+//        } else {
+//            System.out.println("Core " + coreId + " quantum expired for Process " + process.getProcessId());
+//            masterCore.addProcess(process);
+//        }
+//        masterCore.printReadyQueue();//print the queue after adding the process back to the queue
+//        makeIdle();
+//    }
+//    private void executeCurrentProcess(Process process) { // Take process as argument
+//        System.out.println("Core " + coreId + " executing Process " + process.getProcessId());
+//
+//        int executedInstructions = 0;
+//        while (executedInstructions < quantum && process.hasNextInstruction()) {
+//            Instruction instruction = process.getNextInstruction();
+//            executeInstruction(instruction);
+//            executedInstructions++;
+//        }
+//
+//        synchronized (this) { // Synchronize access to currentProcess and isIdle
+//            if (!process.hasNextInstruction()) {
+//                System.out.println("Core " + coreId + " completed Process " + process.getProcessId());
+//                process.markComplete();
+//            } else {
+//                System.out.println("Core " + coreId + " quantum expired for Process " + process.getProcessId());
+//                masterCore.addProcess(process); // Add back to queue from within synchronized block
+//            }
+//            makeIdle();
+//        }
+//    }
     private void printReadyQueue() {
         System.out.print("Ready Queue: ");
         for (Process process : masterCore.getReadyQueue()) {
@@ -163,27 +209,6 @@ public class SlaveCore extends Thread {
         return value;
     }
 
-/*
-    private int getOperandValue(char variable) {
-        Integer value;
-        if (variable == 'a') {
-            value = masterCore.getAValueByProcessId(currentProcess.getProcessId());
-        } else if (variable == 'b') {
-            value = masterCore.getBValueByProcessId(currentProcess.getProcessId());
-        } else {
-            value = masterCore.getValue(variable);
-        }
 
-        // Handle the case when the value is not set for the variable
-        if (value == null) {
-            System.out.println("Value for variable " + variable + " is not set for process ID " + currentProcess.getProcessId());
-            // You can choose a different approach here:
-            // - return a default value (e.g., 0)
-            // - throw a custom exception
-            return 0;
-        }
-        return value;
-    }
-*/
 }
 
